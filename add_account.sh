@@ -3,10 +3,13 @@
 
 // Add new account to the database
 require_once dirname(__FILE__) . "/config.php";
+require_once dirname(__FILE__) . "/lib/include.authFunctions.php";
 
 if (count($argv) < 4) {
 	exit(usage());
 }
+
+// TODO: We don't really need to ask for the current username here, as we'll get that anyway in the call to authAccount
 
 function usage() {
 	global $argv;
@@ -40,16 +43,36 @@ if (isset($get_uuid["id"],$get_uuid["name"])) {
         exit("[ERROR] Username/UUID fetch failed\n");
 }
 
+// Validate credentials with Mojang
 
+$testAuth = authAccount($user_info["email"], $user_info["pass"]);
+
+if (isset($testAuth["error"], $testAuth["errorMessage"])) {
+	echo "[ERROR] Mojang returned the following error upon attempting to authenticate:\n";
+	echo "        'error'		=> " . $testAuth["error"] . "\n";
+	echo "        'errorMessage	=> " . $testAuth["errorMessage"] . "\n";
+	exit("Maybe the credentials are wrong, or we've been ratelimited...\n");
+} elseif (isset($testAuth["accessToken"], $testAuth["clientToken"], $testAuth["selectedProfile"])) {
+
+	echo "[INFO] Confirmed login.\n";
+	echo "       Username: " . $testAuth["selectedProfile"]["name"] . "\n";
+	echo "           UUID: " . $testAuth["selectedProfile"]["id"]   . "\n";
+	$user_info["user"]		= $testAuth["selectedProfile"]["name"];
+	$user_info["uuid"]		= $testAuth["selectedProfile"]["id"];
+	$user_info["access_token"]	= $testAuth["accessToken"];
+	$user_info["client_token"]	= $testAuth["clientToken"];
+}
 
 
 // Add these to the database
 
-$addCreds = $db->prepare("INSERT INTO accounts (account_uuid, account_email, account_password, account_username) VALUES (:uuid, :email, :pass, :user)");
+$addCreds = $db->prepare("INSERT INTO accounts (account_uuid, account_email, account_password, account_username, access_token, client_token) VALUES (:uuid, :email, :pass, :user, :access, :client)");
 $addCreds->bindValue(':uuid',	$user_info["uuid"], SQLITE3_TEXT);
 $addCreds->bindValue(':email',	$user_info["email"], SQLITE3_TEXT);
 $addCreds->bindValue(':pass',	$user_info["pass"], SQLITE3_TEXT);
 $addCreds->bindValue(':user',	$user_info["user"], SQLITE3_TEXT);
+$addCreds->bindValue(':access',	$user_info["access_token"], SQLITE3_TEXT);
+$addCreds->bindValue(':client',	$user_info["client_token"], SQLITE3_TEXT);
 
 $result = $addCreds->execute();
 

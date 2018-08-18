@@ -19,8 +19,18 @@ $ Add new Minecraft account to the database.
 Usage: ./add_account.sh <email address> <username> <password>
 ```
 
+## Refresh accessToken/clientToken
+
+Incomplete: This only populates the accessToken and clientToken if we don't already have one.
+
+```
+Check if current access token/client token is usable, and if not, obtain a new one
+Usage: ./refresh_account.sh <email address or username>
+```
+
 ## TODO:
 
 - Actual account verification 
 - Token storage
 - Integration with Minecraft clients (?)
+
