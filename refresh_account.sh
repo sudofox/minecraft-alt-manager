@@ -83,6 +83,29 @@ if (strlen($userData["access_token"]) == 0 || strlen($userData["client_token"]) 
 } else {
 
 	// Cool, we already have one, so let's check if it's valid to use.
+	if (validateToken($userData["access_token"])) {
+		exit("[INFO] " . $userData["account_username"] . "'s token is valid, exiting.\n");
+	} else {
+
+	// Attempt to refresh it, and if that fails, grab a new one with the username and password.
+
+	// Part 1: Attempt refresh
+
+	$tryRefresh = refreshAccount($userData["access_token"], null); // we don't need to provide a client token, especially if it's gotten goofed up by logging in separately
+
+	 if (isset($tryRefresh["error"], $tryRefresh["errorMessage"])) {
+                echo "[INFO] Mojang returned the following error upon attempting to refresh the token:\n";
+                echo "        'error'           => " . $tryRefresh["error"] . "\n";
+                echo "        'errorMessage     => " . $tryRefresh["errorMessage"] . "\n";
+                echo "[INFO] Now trying with username and password...\n";
+
+		// TODO: Add try with username and password
+
+        }
+	var_dump($tryRefresh);
+
+	}
+
 	exit("[INFO] TODO: Refresh or validate the token.\n");
 
 }
